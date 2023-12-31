@@ -1,0 +1,72 @@
+
+
+
+
+
+//1//
+
+const UserOTPService = async (req) => {
+     try {
+         let email=req.params.email;
+         let code=Math.floor(100000+Math.random()*900000);
+
+         let EmailText=`Your Verification Code is= ${code}`
+         let EmailSubject='Email Verification'
+
+         await EmailSend(email,EmailText,EmailSubject);
+        //this will update otp for the user email and  if the emil is not exit then this will create a document in the database for the upsert:true
+         await UserModel.updateOne({email:email},{$set:{otp:code}},{upsert:true})
+
+         return {status:"success", message:"6 Digit OTP has been send"}
+     }catch (e) {
+         return {status:"fail", message:"Something Went Wrong"}
+     }
+}
+
+
+
+
+
+///2//
+
+ let JoinWithBrandStage= {$lookup:{from:"brands",localField:"brandID",foreignField:"_id",as:"brand"}};
+ let UnwindBrandStage={$unwind:"$brand"}
+
+ ///3///
+
+
+
+ const {DecodeToken} = require("../utility/TokenHelper");
+ module.exports=(req,res,next)=>{
+
+     // Receive Token
+     let token=req.headers['token']
+     if(!token){
+         token=req.cookies['token']
+     }
+
+
+   // Token Decode
+   let decoded=DecodeToken(token)
+
+
+   // Request Header Email+UserID Add
+   if(decoded===null){
+       return res.status(401).json({status:"fail", message:"Unauthorized"})
+   }
+   else {
+     let email=decoded['email'];
+     let user_id=decoded['user_id'];
+
+
+     //this will set the emil and the user _id in to header
+
+
+     req.headers.email=email;
+     req.headers.user_id=user_id;
+     next();
+   }
+ }
+
+
+
